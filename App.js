@@ -2,14 +2,55 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, TextInput , View, Button } from 'react-native';
 import firebase from './src/firebaseConnection';
 import { useState, useEffect } from 'react';
+import Home from './src/components/Home';
 
 export default function App() {
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
+  const [usuario, setUsuario] = useState('')
+  const [type, setType] = useState('login')
+
+  async function logar(){
+    await firebase.auth().signInWithEmailAndPassword(email, senha)
+    .then((value) => {
+      alert(("Bem-vindo(a): " + value.user.email));
+      setUsuario(value.user.email);
+    })
+    .catch((error) => {
+      alert("Ops! Algo deu errado. Tente novamente.")
+      return;
+    })
+  }
 
   async function cadastrar(){
 
+    await firebase.auth().createUserWithEmailAndPassword(email, senha)
+    .then((value) => {
+      alert("Usuário criado: " + value.user.email)
+      return;
+    })
+    .catch((error)=>{
+      if(error.code === 'auth/weak-password'){
+        alert("A sua senha deve possuir pelo menos 6 caracteres.");
+        return;
+      }
+      if(error.code === 'auth/invalid-email'){
+        alert("Esse e-mail é inválido. Tente novamente.");
+        return;
+      }
+      else{
+        alert("Ops! Algo deu errado. Tente Novamente")
+        return;
+      }
+    })
+    
+    
+
+
   }
+if(usuario){
+  return <Home emailUsuario={usuario}/>
+}
 
   return (
     <View style={styles.container}>
@@ -26,10 +67,30 @@ export default function App() {
       value={senha}
       placeholder='Digite o sua senha'
       />
-      <Button
-      title='Cadastrar'
-      onPress={cadastrar}
-      />
+
+      {type === 'login' ? (
+        <Button
+        title='Acessar'
+        onPress={logar}
+        />
+      ): (
+        <Button
+        title='Cadastrar'
+        onPress={cadastrar}
+        />
+      )}
+      
+      {type === 'login' ? (
+        <Button
+        title='Não possuo uma conta'
+        onPress={() => setType('cadastro')}
+        />
+      ): (
+        <Button
+        title='Já possuo uma conta'
+        onPress={() => setType('login')}
+        />
+      )}
     </View>
   );
 }
